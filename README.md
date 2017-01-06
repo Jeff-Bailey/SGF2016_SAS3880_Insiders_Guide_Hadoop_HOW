@@ -50,9 +50,9 @@ A basic understanding of Hadoop is a prerequisite for attending this workshop.
 
 Required Software
 -----------------
-<ul>SAS 9.4M3, or later
+<pre>SAS 9.4M3, or later
 SAS/ACCESS to Hadoop
 VMWare Player, if you are using a VM.
-Cloudera CDH5.5 Quickstart VM for VMWare (was used for the workshop), or another supported Hadoop distribution.</ul>
+Cloudera CDH5.5 Quickstart VM for VMWare (was used for the workshop), or another supported Hadoop distribution.</pre>
 
 Feel free to use these materials for your own work. If you use them, attribution is greatly appreciated.
