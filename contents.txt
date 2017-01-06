@@ -2,11 +2,10 @@ Jeff Bailey
 Jeff.Bailey@sas.com
 SAS3880 - An Insider's Guide to SAS/ACCESS to Hadoop
 
-Feel free to use these materials but please provide attribution.
-
 ZIP Contents
 ------------
-C:\HOW\bailey\
+..\SGF2016_3008-2016_Hadoop_Workshop\
+	3880-2016 - Hadoop Workshop Slides.pdf
 	code
 		ex00_sas_hadoop_sgf_2016.sas
 		ex02_sas_hadoop_sgf_2016.sas
@@ -40,5 +39,5 @@ Required Software
 SAS 9.4M3, or later
 SAS/ACCESS to Hadoop
 VMWare Player
-Cloudera CDH5.5 Quickstart VM for VMWare
+Cloudera CDH5.5 Quickstart VM for VMWare, or another supported Hadoop distribution.
 
