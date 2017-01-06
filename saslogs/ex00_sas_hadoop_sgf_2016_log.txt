@@ -1,0 +1,13 @@
+2    /************************************************************/
+3    /* Exercise 00 - SAS3880                                    */
+4    /* An Insider's Guide to SAS/ACCESS to Hadoop               */
+5    /*                                                          */
+6    /* This is a very basic LIBNAME statement test.             */
+7    /* It is not a trick. It should work.                       */
+8    /************************************************************/
+9
+10   libname mycdh hadoop server='quickstart.cloudera'
+11                        user=cloudera password=XXXXXXXX;
+NOTE: Libref MYCDH was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default

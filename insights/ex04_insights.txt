@@ -1,0 +1,14 @@
+Bulk loading - Insights
+-----------------------
+Anytime you write data to Hive using SAS/ACCESS to Hadoop you are using bulk load. This means that it doesn't matter if you set BULKLOAD=. For example, setting BULKLOAD=NO means that you are actually bulk loading.
+
+This requires configuration:
+	SAS_HADOOP_CONFIG_PATH=
+	SAS_HADOOP_JAR_PATH=
+	SAS_HADOOP_RESTFUL=1 - Not required but highly recommended. Using it eases the JAR configuration.
+
+SAS/ACCESS to Hadoop actually bypasses JDBC and reads/writes directly to HDFS. This greatly increases performance.
+
+You can short circuit the bypassing JDBC for reading by setting READ_METHOD=JDBC. This is useful for debugging configuration problems.
+
+the final load example includes an example of creating a table that is backed by a Parquet file. This is something that you can't do in other databases.

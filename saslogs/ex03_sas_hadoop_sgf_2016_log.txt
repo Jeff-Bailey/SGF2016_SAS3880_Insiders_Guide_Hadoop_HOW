@@ -1,0 +1,772 @@
+1    /***************************************************************/
+2    /* Exercise 03 - SAS3880                                       */
+3    /* An Insider's Guide to SAS/ACCESS to Hadoop                  */
+4    /*                                                             */
+5    /* Explore CREATE TABLE AS and multi-libname Join Processing   */
+6    /***************************************************************/
+7
+8    /***********************************************/
+9    /* Setup the Cloudera environment              */
+10   /* Move data from SASHELP to CDH               */
+11   /* Create schemas using explicit pass-thru     */
+12   /* CTAS - CREATE TABLE AS                      */
+13   /***********************************************/
+14
+15   /* create the test tables */
+16   /* Create two simple tables */
+17   libname cdh hadoop server="quickstart.cloudera" user=cloudera password=XXXXXXXX;
+
+NOTE: Libref CDH was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+18
+19   data cdh.table1;
+20      x=3; output;
+21      x=2; output;
+22      x=1; output;
+23   run;
+
+NOTE: The data set CDH.TABLE1 has 3 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.57 seconds
+      cpu time            0.03 seconds
+
+
+24
+25   data cdh.table2;
+26      x=3; y=3.3; z='three'; output;
+27      x=2; y=2.2; z='two'; output;
+28      x=1; y=1.1; z='one'; output;
+29      x=4; y=4.4; z='four'; output;
+30      x=5; y=5.5; z='five'; output;
+31   run;
+
+NOTE: The data set CDH.TABLE2 has 5 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.66 seconds
+      cpu time            0.07 seconds
+
+
+32
+33   /****************************************/
+34   /* verify that both tables were created */
+35   /****************************************/
+36
+37   /******************************************************/
+38   /* TEST: change the following line to display the SQL */
+39   /* that is being passed to Hive.                      */
+40   /*                                                    */
+41   /* type in correct code and submit it.                */
+42   /******************************************************/
+43   * options ???????=',,,d' sastraceloc=?????? nostsuffix;
+44   options sastrace=',,,d' sastraceloc=saslog nostsuffix;
+45
+46   /* single schema join - does Hive process the join? */
+47   proc sql;
+48      select t1.x, t2.y, t2.z
+49        from cdh.table1 t1
+50           , cdh.table2 t2
+51       where t1.x=t2.x;
+
+HADOOP_1: Executed: on connection 2
+USE `default`
+
+
+HADOOP_2: Prepared: on connection 2
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_3: Prepared: on connection 2
+DESCRIBE FORMATTED TABLE1
+
+
+HADOOP_4: Prepared: on connection 2
+SELECT * FROM `TABLE1`
+
+
+HADOOP_5: Executed: on connection 3
+USE `default`
+
+
+HADOOP_6: Prepared: on connection 3
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_7: Prepared: on connection 3
+DESCRIBE FORMATTED TABLE2
+
+
+HADOOP_8: Prepared: on connection 3
+SELECT * FROM `TABLE2`
+
+
+HADOOP_9: Executed: on connection 4
+USE `default`
+
+
+HADOOP_10: Prepared: on connection 4
+CREATE TABLE sasdata_15_41_01_425_00003 ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' LINES
+TERMINATED BY '10' STORED AS TEXTFILE LOCATION '/tmp/sasdata_15_41_01_425_00003' AS  select
+t1.`x`, t2.`y`, t2.`z` from `default`.`TABLE1` t1 join `default`.`TABLE2` t2 on t1.`x` = t2.`x`
+
+
+HADOOP_11: Prepared: on connection 4
+SELECT * FROM sasdata_15_41_01_425_00003  --/* describe columns */
+
+NOTE: Writing HTML Body file: sashtml.htm
+ACCESS ENGINE:  SQL statement was passed to the DBMS for fetching data.
+
+HADOOP_12: Executed: on connection 4
+DROP TABLE sasdata_15_41_01_425_00003
+
+52   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           18.82 seconds
+      cpu time            0.18 seconds
+
+
+53
+54   /****************************************************/
+55   /* multi-LIBNAME join                               */
+56   /*    - does Hive process the join?                 */
+57   /*    - if not, why?                                */
+58   /****************************************************/
+59
+60   libname cdh1 hadoop server="quickstart.cloudera" user=cloudera password=XXXXXXXX;
+
+
+HADOOP_13: Executed: on connection 2
+USE `default`
+
+NOTE: Libref CDH1 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+61   libname cdh2 hadoop server="quickstart.cloudera" user=cloudera password=XXXXXXXX;
+
+
+HADOOP_14: Executed: on connection 3
+USE `default`
+
+NOTE: Libref CDH2 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+62
+63   proc sql;
+64      select t1.x, t2.y, t2.z
+65        from cdh1.table1 t1
+66           , cdh2.table2 t2
+67       where t1.x=t2.x;
+
+HADOOP_15: Executed: on connection 4
+USE `default`
+
+
+HADOOP_16: Prepared: on connection 4
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_17: Prepared: on connection 4
+DESCRIBE FORMATTED TABLE1
+
+
+HADOOP_18: Prepared: on connection 4
+SELECT * FROM `TABLE1`
+
+
+HADOOP_19: Executed: on connection 5
+USE `default`
+
+
+HADOOP_20: Prepared: on connection 5
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_21: Prepared: on connection 5
+DESCRIBE FORMATTED TABLE2
+
+
+HADOOP_22: Prepared: on connection 5
+SELECT * FROM `TABLE2`
+
+
+HADOOP_23: Executed: on connection 6
+USE `default`
+
+
+HADOOP_24: Prepared: on connection 6
+CREATE TABLE sasdata_15_41_20_364_00004 ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' LINES
+TERMINATED BY '10' STORED AS TEXTFILE LOCATION '/tmp/sasdata_15_41_20_364_00004' AS  select
+t1.`x`, t2.`y`, t2.`z` from `default`.`TABLE1` t1 join `default`.`TABLE2` t2 on t1.`x` = t2.`x`
+
+
+HADOOP_25: Prepared: on connection 6
+SELECT * FROM sasdata_15_41_20_364_00004  --/* describe columns */
+
+ACCESS ENGINE:  SQL statement was passed to the DBMS for fetching data.
+
+HADOOP_26: Executed: on connection 6
+DROP TABLE sasdata_15_41_20_364_00004
+
+68   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           17.60 seconds
+      cpu time            0.09 seconds
+
+
+69
+70   /****************************************************/
+71   /* multi-LIBNAME join                               */
+72   /*    - does Hive process the join?                 */
+73   /*    - if not, why?                                */
+74   /****************************************************/
+75   libname cdh1 hadoop server="quickstart.cloudera" ;
+
+HADOOP_27: Executed: on connection 2
+USE `default`
+
+NOTE: Libref CDH1 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+76   libname cdh2 hadoop server="quickstart.cloudera"  user=cloudera password=XXXXXXXX;
+
+
+HADOOP_28: Executed: on connection 3
+USE `default`
+
+NOTE: Libref CDH2 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+77
+78   proc sql;
+79      select t1.x, t2.y, t2.z
+80        from cdh1.table1 t1
+81           , cdh2.table2 t2
+82       where t1.x=t2.x;
+
+HADOOP_29: Executed: on connection 4
+USE `default`
+
+
+HADOOP_30: Prepared: on connection 4
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_31: Prepared: on connection 4
+DESCRIBE FORMATTED TABLE1
+
+
+HADOOP_32: Prepared: on connection 4
+SELECT * FROM `TABLE1`
+
+
+HADOOP_33: Executed: on connection 5
+USE `default`
+
+
+HADOOP_34: Prepared: on connection 5
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_35: Prepared: on connection 5
+DESCRIBE FORMATTED TABLE2
+
+
+HADOOP_36: Prepared: on connection 5
+SELECT * FROM `TABLE2`
+
+ERROR: This SQL statement will not be passed to the DBMS for processing because it involves a
+       join across librefs with different connection properties.
+
+HADOOP_37: Executed: on connection 6
+USE `default`
+
+
+HADOOP_38: Executed: on connection 6
+USE `default`
+
+
+HADOOP_39: Prepared: on connection 5
+CREATE TABLE sasdata_15_41_38_685_00005 ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' LINES
+TERMINATED BY '10' STORED AS TEXTFILE LOCATION '/tmp/sasdata_15_41_38_685_00005' AS SELECT
+`TABLE2`.`y`, `TABLE2`.`z`, `TABLE2`.`x`  FROM `TABLE2`
+
+
+HADOOP_40: Prepared: on connection 5
+SELECT * FROM sasdata_15_41_38_685_00005  --/* describe columns */
+
+
+HADOOP_41: Executed: on connection 5
+DROP TABLE sasdata_15_41_38_685_00005
+
+83   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           15.77 seconds
+      cpu time            0.18 seconds
+
+
+84
+85   /****************************************************/
+86   /* multi-LIBNAME join                               */
+87   /*    - does Hive process the join?                 */
+88   /*    - if not, why?                                */
+89   /****************************************************/
+90   libname cdh1 hadoop server="quickstart.cloudera" ;
+
+HADOOP_42: Executed: on connection 2
+USE `default`
+
+NOTE: Libref CDH1 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+91   libname cdh2 hadoop server="quickstart2.cloudera" ;
+
+HADOOP_43: Executed: on connection 3
+USE `default`
+
+NOTE: Libref CDH2 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart2.cloudera:10000/default
+92
+93   proc sql;
+94      select t1.x, t2.y, t2.z
+95        from cdh1.table1 t1
+96           , cdh2.table2 t2
+97       where t1.x=t2.x;
+
+HADOOP_44: Executed: on connection 4
+USE `default`
+
+
+HADOOP_45: Prepared: on connection 4
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_46: Prepared: on connection 4
+DESCRIBE FORMATTED TABLE1
+
+
+HADOOP_47: Prepared: on connection 4
+SELECT * FROM `TABLE1`
+
+
+HADOOP_48: Executed: on connection 5
+USE `default`
+
+
+HADOOP_49: Prepared: on connection 5
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_50: Prepared: on connection 5
+DESCRIBE FORMATTED TABLE2
+
+
+HADOOP_51: Prepared: on connection 5
+SELECT * FROM `TABLE2`
+
+ERROR: This SQL statement will not be passed to the DBMS for processing because it involves a
+       join across librefs with different connection properties.
+
+HADOOP_52: Executed: on connection 6
+USE `default`
+
+
+HADOOP_53: Executed: on connection 6
+USE `default`
+
+
+HADOOP_54: Prepared: on connection 5
+CREATE TABLE sasdata_15_41_54_615_00006 ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' LINES
+TERMINATED BY '10' STORED AS TEXTFILE LOCATION '/tmp/sasdata_15_41_54_615_00006' AS SELECT
+`TABLE2`.`y`, `TABLE2`.`z`, `TABLE2`.`x`  FROM `TABLE2`
+
+HADOOP: Streaming read CTAS error: Error while processing statement: FAILED: Execution Error,
+return code 1 from org.apache.hadoop.hive.ql.exec.mr.MapRedTask
+HADOOP: Reverting to non-CTAS HiveQL
+
+HADOOP_55: Prepared: on connection 5
+SELECT  `TABLE2`.`y`, `TABLE2`.`z`, `TABLE2`.`x`  FROM `TABLE2`
+
+Streaming read DISABLED: The original HiveQL succeeded where the streaming read CTAS failed
+98   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           1.51 seconds
+      cpu time            0.17 seconds
+
+
+99
+100  /**************************/
+101  /* Setup Multischema Test */
+102  /**************************/
+103
+104  /***************************************/
+105  /* create two Hive schemas for testing */
+106  /***************************************/
+107  proc sql;
+108     connect to hadoop (server="quickstart.cloudera" user=cloudera password=XXXXXXXX);
+
+
+HADOOP_56: Executed: on connection 4
+USE `default`
+
+109     execute(create schema schema1) by hadoop;
+
+HADOOP_57: Executed: on connection 4
+create schema schema1
+
+110     execute(create schema schema2) by hadoop;
+
+HADOOP_58: Executed: on connection 4
+create schema schema2
+
+111  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.27 seconds
+      cpu time            0.01 seconds
+
+
+112
+113  /************************************************/
+114  /* CREATE TABLE AS                              */
+115  /*   - view the SQL that is passed to Hive and  */
+116  /*     describe how they are different.         */
+117  /*   - which is better?                         */
+118  /************************************************/
+119  libname cdhsch1 hadoop server="quickstart.cloudera" user=cloudera password=XXXXXXXX
+119! schema=schema1;
+
+HADOOP_59: Executed: on connection 4
+USE `schema1`
+
+NOTE: Libref CDHSCH1 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/schema1
+120  libname cdhsch2 hadoop server="quickstart.cloudera" user=cloudera password=XXXXXXXX
+120! schema=schema2;
+
+HADOOP_60: Executed: on connection 5
+USE `schema2`
+
+NOTE: Libref CDHSCH2 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/schema2
+121
+122  options dbidirectexec;
+123  proc sql;
+124     create table cdhsch1.table1 as select * from cdh.table1;
+
+HADOOP_61: Executed: on connection 6
+USE `schema1`
+
+
+HADOOP_62: Prepared: on connection 6
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_63: Executed: on connection 6
+USE `default`
+
+
+HADOOP_64: Prepared: on connection 6
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_65: Prepared: on connection 6
+DESCRIBE FORMATTED TABLE1
+
+
+HADOOP_66: Prepared: on connection 6
+SELECT * FROM `TABLE1`
+
+
+HADOOP_67: Executed: on connection 7
+USE `schema1`
+
+
+HADOOP_68: Executed: on connection 7
+CREATE TABLE `schema1`.`table1` as select TXT_1.`x` from `default`.`TABLE1` TXT_1
+
+
+HADOOP_69: Executed: on connection 8
+USE `schema1`
+
+
+HADOOP_70: Prepared: on connection 8
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_71: Prepared: on connection 8
+DESCRIBE FORMATTED TABLE1
+
+
+HADOOP_72: Prepared: on connection 8
+SELECT * FROM `TABLE1`
+
+125  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           14.10 seconds
+      cpu time            0.04 seconds
+
+
+126
+127  options nodbidirectexec;
+128  proc sql;
+129     create table cdhsch2.table2 as select * from cdh.table2;
+
+HADOOP_73: Executed: on connection 6
+USE `default`
+
+
+HADOOP_74: Prepared: on connection 6
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_75: Prepared: on connection 6
+DESCRIBE FORMATTED TABLE2
+
+
+HADOOP_76: Prepared: on connection 6
+SELECT * FROM `TABLE2`
+
+
+HADOOP_77: Executed: on connection 8
+USE `schema2`
+
+
+HADOOP_78: Prepared: on connection 8
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_79: Executed: on connection 9
+USE `schema2`
+
+
+HADOOP_80: Prepared: on connection 9
+SHOW TABLES 'TABLE2'
+
+NOTE: SAS variable labels, formats, and lengths are not written to DBMS tables.
+
+HADOOP_81: Executed: on connection 9
+CREATE TABLE `TABLE2` (`x` DOUBLE,`y` DOUBLE,`z` VARCHAR(5)) ROW FORMAT DELIMITED FIELDS
+TERMINATED BY '\001' LINES TERMINATED BY '\012' STORED AS TEXTFILE TBLPROPERTIES ('SAS OS
+Name'='X64_7PRO','SAS Version'='9.04.01M3P06242015')
+
+
+HADOOP_82: Executed: on connection 9
+LOAD DATA INPATH '/tmp/sasdata-2016-02-23-15-42-10-516-e-00007.dlv' OVERWRITE INTO TABLE `TABLE2`
+
+NOTE: Table CDHSCH2.TABLE2 created, with 5 rows and 3 columns.
+
+130  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           1.30 seconds
+      cpu time            0.06 seconds
+
+
+131
+132  /****************************************************/
+133  /* multi-LIBNAME multi-SCHEMA join                  */
+134  /*    - do you think Hive will process the join     */
+135  /*      when SCHEMA= values are different?          */
+136  /****************************************************/
+137
+138  libname cdhsch1 hadoop server="quickstart.cloudera" user=cloudera password=XXXXXXXX
+138! schema=schema1;
+
+HADOOP_83: Executed: on connection 4
+USE `schema1`
+
+NOTE: Libref CDHSCH1 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/schema1
+139  libname cdhsch2 hadoop server="quickstart.cloudera" user=cloudera password=XXXXXXXX
+139! schema=schema2;
+
+HADOOP_84: Executed: on connection 5
+USE `schema2`
+
+NOTE: Libref CDHSCH2 was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/schema2
+140
+141  proc sql;
+142     select t1.x, t2.y, t2.z
+143       from cdh1.table1 t1
+144          , cdh2.table2 t2
+145      where t1.x=t2.x;
+
+HADOOP_85: Executed: on connection 6
+USE `default`
+
+
+HADOOP_86: Prepared: on connection 6
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_87: Prepared: on connection 6
+DESCRIBE FORMATTED TABLE1
+
+
+HADOOP_88: Prepared: on connection 6
+SELECT * FROM `TABLE1`
+
+
+HADOOP_89: Executed: on connection 7
+USE `default`
+
+
+HADOOP_90: Prepared: on connection 7
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_91: Prepared: on connection 7
+DESCRIBE FORMATTED TABLE2
+
+
+HADOOP_92: Prepared: on connection 7
+SELECT * FROM `TABLE2`
+
+ERROR: This SQL statement will not be passed to the DBMS for processing because it involves a
+       join across librefs with different connection properties.
+
+HADOOP_93: Executed: on connection 8
+USE `default`
+
+
+HADOOP_94: Executed: on connection 8
+USE `default`
+
+
+HADOOP_95: Prepared: on connection 7
+SELECT  `TABLE2`.`y`, `TABLE2`.`z`, `TABLE2`.`x`  FROM `TABLE2`
+
+146  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.83 seconds
+      cpu time            0.04 seconds
+
+
+147
+148  /************/
+149  /* Clean up */
+150  /************/
+151  proc sql;
+152      drop table cdh.table1;
+
+HADOOP_96: Prepared: on connection 1
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_97: Prepared: on connection 1
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_98: Executed: on connection 1
+DROP TABLE IF EXISTS `TABLE1`
+
+
+HADOOP_99: Executed: on connection 1
+DROP VIEW IF EXISTS `TABLE1`
+
+NOTE: Table CDH.TABLE1 has been dropped.
+153      drop table cdh.table2;
+
+HADOOP_100: Prepared: on connection 1
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_101: Prepared: on connection 1
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_102: Executed: on connection 1
+DROP TABLE IF EXISTS `TABLE2`
+
+
+HADOOP_103: Executed: on connection 1
+DROP VIEW IF EXISTS `TABLE2`
+
+NOTE: Table CDH.TABLE2 has been dropped.
+154      drop table cdhsch1.table1;
+
+HADOOP_104: Executed: on connection 6
+USE `schema1`
+
+
+HADOOP_105: Prepared: on connection 6
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_106: Prepared: on connection 6
+SHOW TABLES 'TABLE1'
+
+
+HADOOP_107: Executed: on connection 6
+DROP TABLE IF EXISTS `TABLE1`
+
+
+HADOOP_108: Executed: on connection 6
+DROP VIEW IF EXISTS `TABLE1`
+
+NOTE: Table CDHSCH1.TABLE1 has been dropped.
+155      drop table cdhsch2.table2;
+
+HADOOP_109: Executed: on connection 7
+USE `schema2`
+
+
+HADOOP_110: Prepared: on connection 7
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_111: Prepared: on connection 7
+SHOW TABLES 'TABLE2'
+
+
+HADOOP_112: Executed: on connection 7
+DROP TABLE IF EXISTS `TABLE2`
+
+
+HADOOP_113: Executed: on connection 7
+DROP VIEW IF EXISTS `TABLE2`
+
+NOTE: Table CDHSCH2.TABLE2 has been dropped.
+156  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           1.02 seconds
+      cpu time            0.06 seconds
+
+
+157
+158  /*********************/
+159  /* drop Hive schemas */
+160  /*********************/
+161  proc sql;
+162     connect to hadoop (server="quickstart.cloudera" user=cloudera password=XXXXXXXX);
+
+
+HADOOP_114: Executed: on connection 8
+USE `default`
+
+163     execute(drop schema schema1) by hadoop;
+
+HADOOP_115: Executed: on connection 8
+drop schema schema1
+
+164     execute(drop schema schema2) by hadoop;
+
+HADOOP_116: Executed: on connection 8
+drop schema schema2
+
+165  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.24 seconds
+      cpu time            0.00 seconds
+
+
+166
+167
+168  /*******************/
+169  /* End Exercise 03 */
+170  /*******************/
+

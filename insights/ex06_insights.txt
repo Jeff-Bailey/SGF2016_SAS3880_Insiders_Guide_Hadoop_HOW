@@ -1,0 +1,6 @@
+In-Database PROC Example - Insights
+-----------------------------------
+This was included as an example.
+
+Study the SQL that is generated so that you can recognize the pattern. It is good to be able to determine when processing was passed to the database.
+

@@ -1,0 +1,44 @@
+Jeff Bailey
+Jeff.Bailey@sas.com
+SAS3880 - An Insider's Guide to SAS/ACCESS to Hadoop
+
+Feel free to use these materials but please provide attribution.
+
+ZIP Contents
+------------
+C:\HOW\bailey\
+	code
+		ex00_sas_hadoop_sgf_2016.sas
+		ex02_sas_hadoop_sgf_2016.sas
+		ex03_sas_hadoop_sgf_2016.sas
+		ex04_sas_hadoop_sgf_2016.sas
+		ex05_sas_hadoop_sgf_2016.sas
+		ex06_sas_hadoop_sgf_2016.sas
+	data
+		sgf_characters.txt
+		sgf_digits.txt
+		single_string_column.txt
+	exercises
+		SAS3880_Insiders_Guide_ACCESS_Hadoop.pdf
+	insights
+		ex02_insights.txt
+		ex03_insights.txt
+		ex04_insights.txt
+		ex05_insights.txt
+		ex06_insights.txt
+	saslogs
+		ex00_sas_hadoop_sgf_2016_log.txt
+		ex02_sas_hadoop_sgf_2016_log.txt
+		ex03_sas_hadoop_sgf_2016_log.txt
+		ex04_sas_hadoop_sgf_2016_log.txt
+		ex05_sas_hadoop_sgf_2016_log.txt
+		ex06_sas_hadoop_sgf_2016_log.txt
+
+
+Required Software
+-----------------
+SAS 9.4M3, or later
+SAS/ACCESS to Hadoop
+VMWare Player
+Cloudera CDH5.5 Quickstart VM for VMWare
+

@@ -1,0 +1,16 @@
+EX02 Tables and Files - Insights
+--------------------------------
+MapReduce should be avoided if at all possible.
+
+You can delete a table and leave the file - External Tables.
+
+You can delete a file and leave the table - this helps with ETL and other things. It makes the environment very flexible.
+
+It is possible to create a table which does not match the underlying data. This may result in errors or unexpected results. The data is validated against it's definition when it is read - SCHEMA-ON-READ.
+
+Data base management systems use SCHEMA-ON-WRITE. This means that data that does not match the defined data type cannot be written to the database - SCHEMA-ON-WRITE.
+
+PROC HADOOP - is a great housekeeper. You can use it to clean-up after jobs. It is also very useful for setting up HDFS directories, etc. 
+
+HUE (Hadoop Users Experience) is a great way to learn what SAS is doing. It is also a great tool for doing real work - like finding files and working on queries.
+

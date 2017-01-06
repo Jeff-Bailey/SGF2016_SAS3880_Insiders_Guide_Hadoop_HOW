@@ -1,0 +1,17 @@
+Multi-LIBNAME statement JOIN and CREATE TABLE AS Processing - Insights
+----------------------------------------------------------------------
+It is easy to code examples to test whether X processing happens inside the database.
+
+If you use any SAS/ACCESS product this is one of the most important things that you can know. You should memorize this OPTIONS statement:
+	options sastrace=',,,d' sastraceloc=saslog nostsuffix;
+
+The most interesting thing here is that using two different hostnames, which point to the same server, will cause a JOIN to be post processed in SAS. I guess this shouldn't surprise me, but it does.
+
+Similarly, if you include USER= and/or PASSWORD= on only one LIBNAME statement the JOIN will not be passed to Hive.
+
+Cross schema JOINs are not allowed here. In other ACCESS products they are allowed. Know your SAS/ACCESS product.
+
+CREATE TABLE AS is very expensive if it is not passed to Hive. You do this you should ensure that Hive handles the processing. Look up DBIDIRECTEXEC and make sure you understand it.
+
+Note the use of EXPLICIT PASS-THRU to create/drop Hive schemas. It is a great example of the types of things you should use it for.
+

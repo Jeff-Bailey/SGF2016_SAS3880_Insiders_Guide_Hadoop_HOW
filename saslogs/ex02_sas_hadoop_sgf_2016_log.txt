@@ -1,0 +1,471 @@
+1    /************************************************************/
+2    /* Exercise 02 - SAS3880                                    */
+3    /* An Insider's Guide to SAS/ACCESS to Hadoop               */
+4    /*                                                          */
+5    /* Explore Hive tables, HDFS files, and how they relate.    */
+6    /************************************************************/
+7
+8    /******************************************************************/
+9    /* We used to have to do this type of thing... now we don't       */
+10   /* filename cfg 'C:\SAS_HADOOP_CONFIG_PATH\core-hdfs-merged.xml'; */
+11   /******************************************************************/
+12
+13   /***********************************************/
+14   /* Setup the Cloudera environment              */
+15   /* PROC HADOOP is great for setup and clean up */
+16   /***********************************************/
+17
+18   /*********************************************************/
+19   /* - create a directory in the Hadoop File System (HDFS) */
+20   /* - copy a file to HDFS                                 */
+21   /*********************************************************/
+22   proc hadoop username="cloudera" verbose;
+23      HDFS mkdir='/user/cloudera/textfile';
+24      HDFS copyfromlocal='C:\HOW\bailey\data\sgf_characters.txt'
+25                     out='/user/cloudera/textfile/sgf_characters.txt';
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/?op=GETHOMEDIRECTORY&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/textfile?op=MKDIRS&user.name=cloud
+      era
+26   run;
+
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/?op=GETHOMEDIRECTORY&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/textfile/sgf_characters.txt?op=GET
+      FILESTATUS&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/textfile/sgf_characters.txt?op=CRE
+      ATE&buffersize=503808&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50075/webhdfs/v1/user/cloudera/textfile/sgf_characters.txt?op=CRE
+      ATE&user.name=cloudera&namenoderpcaddress=quickstart.cloudera:8020&buffersize=503808&overwri
+      te=false
+NOTE: PROCEDURE HADOOP used (Total process time):
+      real time           0.32 seconds
+      cpu time            0.07 seconds
+
+
+27
+28   /***************************************************/
+29   /* Locate the HDFS file using the HUE file browser */
+30   /* and login                                       */
+31   /*                                                 */
+32   /* http://quickstart.cloudera:8888                 */
+33   /* cloudera/cloudera                               */
+34   /***************************************************/
+35
+36   /******************************************************************/
+37   /* Display the contents of the  sgf_characters.txt file using SAS */
+38   /******************************************************************/
+39
+40   /********************************************************/
+41   /* Open core-hdfs-merged.xml using NOTEPAD.             */
+42   /* What do you think the purpose of the file is?        */
+43   /* Why do you think SAS requires the file?              */
+44   /* Where does the sgf_characters.txt file live?         */
+45   /********************************************************/
+46
+47   filename sgftext hadoop '/user/cloudera/textfile/sgf_characters.txt' user=cloudera;
+48
+49   data _null_;
+50      infile sgftext;
+51      input mycharacter $1.;
+52      put mycharacter;
+53   run;
+
+NOTE: The infile SGFTEXT is:
+      Filename=/user/cloudera/textfile/sgf_characters.txt
+
+a
+b
+c
+d
+e
+f
+g
+h
+i
+j
+k
+l
+m
+n
+o
+p
+q
+r
+s
+t
+u
+v
+w
+x
+y
+z
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+NOTE: 36 records were read from the infile SGFTEXT.
+      The minimum record length was 1.
+      The maximum record length was 1.
+NOTE: DATA statement used (Total process time):
+      real time           0.18 seconds
+      cpu time            0.06 seconds
+
+
+54
+55   /**************************/
+56   /* Using ACCESS to Hadoop */
+57   /**************************/
+58
+59   /*****************************************/
+60   /* Create a table using ACCESS to Hadoop */
+61   /*****************************************/
+62   proc sql;
+63      connect to hadoop(server='quickstart.cloudera' user=cloudera);
+64      execute (create external table mytext(c1 varchar(1))
+65                  stored as textfile
+66                  location '/user/cloudera/textfile') by hadoop;
+67   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.57 seconds
+      cpu time            0.04 seconds
+
+
+68
+69   /* let's verify that the table is there and SAS can read it. */
+70
+71   libname mycdh hadoop server='quickstart.cloudera' user=cloudera;
+NOTE: Libref MYCDH was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+72   options fullstimer;
+73
+74   /***********************************************/
+75   /* We created a table but did not load it.     */
+76   /* - Where did the data come from?             */
+77   /***********************************************/
+78   proc sql;
+79      connect to hadoop(server='quickstart.cloudera' user=cloudera);
+80      select count(*) from connection to hadoop
+81         (select * from mytext);
+NOTE: Writing HTML Body file: sashtml.htm
+82   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.38 seconds
+      user cpu time       0.06 seconds
+      system cpu time     0.03 seconds
+      memory              6800.28k
+      OS Memory           17392.00k
+      Timestamp           02/23/2016 04:09:16 PM
+      Step Count                        4  Switch Count  1
+
+
+83
+84   /************************************************************/
+85   /* Let's ask the same question in a slightly different way. */
+86   /* - Passing the count() function to Hadoop should make     */
+87   /*   the query perform better, right?                       */
+88   /* - Do the results match your expectations?                */
+89   /* - Why is there a performance difference?                 */
+90   /************************************************************/
+91   proc sql;
+92      connect to hadoop(server='quickstart.cloudera' user=cloudera);
+93      select * from connection to hadoop
+94         (select count(*) from mytext);
+95   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           18.50 seconds
+      user cpu time       0.11 seconds
+      system cpu time     0.42 seconds
+      memory              5345.53k
+      OS Memory           22772.00k
+      Timestamp           02/23/2016 04:09:34 PM
+      Step Count                        5  Switch Count  1
+
+
+96
+97   /* Why is the second version is much faster. Point out that */
+98   /* the count(*) was passed to Hive. Or was it? How do we know?    */
+99   /* Revisit this. It will keep their attention.                    */
+100
+101  /******************************************/
+102  /* Drop the table.                        */
+103  /* - What happens to the HDFS file?       */
+104  /* - Why would this behavior be valuable? */
+105  /******************************************/
+106
+107  proc sql;
+108     drop table mycdh.mytext;
+NOTE: Table MYCDH.MYTEXT has been dropped.
+109  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.19 seconds
+      user cpu time       0.00 seconds
+      system cpu time     0.00 seconds
+      memory              1212.31k
+      OS Memory           18740.00k
+      Timestamp           02/23/2016 04:09:34 PM
+      Step Count                        6  Switch Count  4
+
+
+110
+111  /**************************************************************************/
+112  /* View the mycdh library in SAS Explorer to make sure the table is gone. */
+113  /**************************************************************************/
+114
+115  /*******************************************************/
+116  /* Run the DATA step again.                            */
+117  /* - Does the DATA step work? If so, why? If not, why? */
+118  /*******************************************************/
+119  data _null_;
+120     infile sgftext;
+121     input mycharacter $1.;
+122     put mycharacter;
+123  run;
+
+NOTE: The infile SGFTEXT is:
+      Filename=/user/cloudera/textfile/sgf_characters.txt
+
+a
+b
+c
+d
+e
+f
+g
+h
+i
+j
+k
+l
+m
+n
+o
+p
+q
+r
+s
+t
+u
+v
+w
+x
+y
+z
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+NOTE: 36 records were read from the infile SGFTEXT.
+      The minimum record length was 1.
+      The maximum record length was 1.
+NOTE: DATA statement used (Total process time):
+      real time           0.15 seconds
+      user cpu time       0.01 seconds
+      system cpu time     0.03 seconds
+      memory              1565.15k
+      OS Memory           18892.00k
+      Timestamp           02/23/2016 04:09:34 PM
+      Step Count                        7  Switch Count  0
+
+
+124
+125  /*************************************************/
+126  /* delete the textfile HDFS directory.           */
+127  /* What happens to the sgf_characters.txt file?  */
+128  /*************************************************/
+129
+130  proc hadoop username="cloudera" verbose;
+131     HDFS delete='/user/cloudera/textfile';
+There were 1 files and 1 directories deleted.
+132  run;
+
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/?op=GETHOMEDIRECTORY&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/textfile?op=LISTSTATUS&user.name=c
+      loudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/textfile/sgf_characters.txt?op=DEL
+      ETE&recursive=true&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/textfile?op=DELETE&recursive=true&
+      user.name=cloudera
+NOTE: PROCEDURE HADOOP used (Total process time):
+      real time           0.14 seconds
+      user cpu time       0.00 seconds
+      system cpu time     0.03 seconds
+      memory              501.43k
+      OS Memory           17904.00k
+      Timestamp           02/23/2016 04:09:35 PM
+      Step Count                        8  Switch Count  3
+
+
+133
+134  /*************************************************/
+135  /* Now for something really interesting...       */
+136  /* Run the following code describe what happens. */
+137  /* - Why is this a big deal?                     */
+138  /*************************************************/
+139
+140  proc hadoop username="cloudera" verbose;
+141     HDFS mkdir='/user/cloudera/digitsfile';
+142     HDFS copyfromlocal='C:\HOW\bailey\data\sgf_digits.txt'
+143                    out='/user/cloudera/digitsfile/sgf_digits.txt';
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/?op=GETHOMEDIRECTORY&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/digitsfile?op=MKDIRS&user.name=clo
+      udera
+144  run;
+
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/?op=GETHOMEDIRECTORY&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/digitsfile/sgf_digits.txt?op=GETFI
+      LESTATUS&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/digitsfile/sgf_digits.txt?op=CREAT
+      E&buffersize=503808&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50075/webhdfs/v1/user/cloudera/digitsfile/sgf_digits.txt?op=CREAT
+      E&user.name=cloudera&namenoderpcaddress=quickstart.cloudera:8020&buffersize=503808&overwrite
+      =false
+NOTE: PROCEDURE HADOOP used (Total process time):
+      real time           0.29 seconds
+      user cpu time       0.00 seconds
+      system cpu time     0.03 seconds
+      memory              2349.03k
+      OS Memory           19880.00k
+      Timestamp           02/23/2016 04:09:35 PM
+      Step Count                        9  Switch Count  5
+
+
+145
+146  proc sql;
+147     connect to hadoop(server='quickstart.cloudera' user=cloudera);
+148     execute (create table mydigits(myint int)
+149                 stored as textfile
+150                 location '/user/cloudera/digitsfile') by hadoop;
+151  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.08 seconds
+      user cpu time       0.00 seconds
+      system cpu time     0.00 seconds
+      memory              1265.71k
+      OS Memory           18996.00k
+      Timestamp           02/23/2016 04:09:35 PM
+      Step Count                        10  Switch Count  1
+
+
+152
+153  proc sql;
+154     select * from mycdh.mydigits;
+155  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.48 seconds
+      user cpu time       0.00 seconds
+      system cpu time     0.03 seconds
+      memory              5610.09k
+      OS Memory           23288.00k
+      Timestamp           02/23/2016 04:09:35 PM
+      Step Count                        11  Switch Count  3
+
+
+156
+157  /*************************************************************/
+158  /* If this works it may help you see what this is a big deal */
+159  /*************************************************************/
+160
+161  filename sgfdigit hadoop '/user/cloudera/digitsfile/sgf_digits.txt' user=cloudera;
+162
+163  data _null_;
+164     infile sgfdigit;
+165     input mydigits $1.;
+166     put mydigits;
+167  run;
+
+NOTE: The infile SGFDIGIT is:
+      Filename=/user/cloudera/digitsfile/sgf_digits.txt
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+1
+1
+1
+1
+1
+1
+1
+1
+2
+2
+2
+2
+2
+2
+9
+1
+b
+a
+d
+NOTE: 28 records were read from the infile SGFDIGIT.
+      The minimum record length was 1.
+      The maximum record length was 3.
+NOTE: DATA statement used (Total process time):
+      real time           0.17 seconds
+      user cpu time       0.01 seconds
+      system cpu time     0.06 seconds
+      memory              1543.43k
+      OS Memory           19148.00k
+      Timestamp           02/23/2016 04:09:36 PM
+      Step Count                        12  Switch Count  0
+
+
+168
+169  /************/
+170  /* Clean up */
+171  /************/
+172
+173  proc sql;
+174      drop table mycdh.mydigits;
+NOTE: Table MYCDH.MYDIGITS has been dropped.
+175  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.15 seconds
+      user cpu time       0.00 seconds
+      system cpu time     0.01 seconds
+      memory              142.46k
+      OS Memory           18160.00k
+      Timestamp           02/23/2016 04:09:36 PM
+      Step Count                        13  Switch Count  4
+
+
+176
+177  /*******************/
+178  /* End Exercise 02 */
+179  /*******************/
+

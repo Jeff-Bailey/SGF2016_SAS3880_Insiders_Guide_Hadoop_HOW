@@ -1,0 +1,224 @@
+7     /***************************************************************/
+8     /* Exercise 05 - SAS3880                                       */
+9     /* An Insider's Guide to SAS/ACCESS to Hadoop                  */
+10    /*                                                             */
+11    /* 32k string thing                                            */
+12    /***************************************************************/
+13
+14   /* setup the environment  */
+15   /* Copy single_string_column.txt to HDFS. */
+16   proc hadoop username="cloudera" verbose;
+17      HDFS COPYFROMLOCAL="C:\HOW\bailey\data\single_string_column.txt"
+18                     OUT='/user/cloudera/letters/single_string_column.txt';
+19   run;
+
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/?op=GETHOMEDIRECTORY&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/letters/single_string_column.txt?o
+      p=GETFILESTATUS&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50070/webhdfs/v1/user/cloudera/letters/single_string_column.txt?o
+      p=CREATE&buffersize=503808&user.name=cloudera
+NOTE: URL sent:
+      http://quickstart.cloudera:50075/webhdfs/v1/user/cloudera/letters/single_string_column.txt?o
+      p=CREATE&user.name=cloudera&namenoderpcaddress=quickstart.cloudera:8020&buffersize=503808&ov
+      erwrite=false
+NOTE: PROCEDURE HADOOP used (Total process time):
+      real time           0.16 seconds
+      cpu time            0.01 seconds
+
+
+20   proc sql;
+21      connect to hadoop (server='quickstart.cloudera' user=cloudera password=XXXXXXXX);
+
+22      execute (create table letters (single_character string)
+23               row format delimited fields terminated by ','
+24               location '/user/cloudera/letters') by hadoop;
+25      disconnect from hadoop;
+26   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.54 seconds
+      cpu time            0.01 seconds
+
+
+27   /********************************************************/
+28   /* How many rows (a single character) are in the table? */
+29   /********************************************************/
+30   libname mycdh hadoop server='quickstart.cloudera' user=cloudera password=XXXXXXXX;
+
+NOTE: Libref MYCDH was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+31
+32   proc sql;
+33      select count(*) from mycdh.letters;
+NOTE: Writing HTML Body file: sashtml.htm
+34   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           21.10 seconds
+      cpu time            0.21 seconds
+
+
+35   /****************************************************************/
+36   /* Using implicit pass-thru, create a SAS data set from letters */
+37   /****************************************************************/
+38
+39   data work.letters;
+40      set mycdh.letters;
+41   run;
+
+NOTE: There were 180 observations read from the data set MYCDH.LETTERS.
+WARNING: SAS/ACCESS assigned this column a length of 32767. If the resulting SAS character
+         variable remains this length, SAS performance is impacted. See SAS/ACCESS documentation
+         for details. The column followed by the maximum length observed was:  single_character:1
+NOTE: The data set WORK.LETTERS has 180 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.41 seconds
+      cpu time            0.03 seconds
+
+
+42   /***********************************************************/
+43   /* Before they added the warning, this was a lot more fun. */
+44   /* How big is the work.letters data set?                   */
+45   /* Does the size (180 characters) seem reasonable?         */
+46   /***********************************************************/
+47   proc datasets library=work;
+48   quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+
+
+49
+50   /****************/
+51   /* Let's fix it */
+52   /****************/
+
+53   proc sql;
+54      connect to hadoop (server='quickstart.cloudera' user=cloudera password=XXXXXXXX);
+
+55      execute (alter table letters set tblproperties ('SASFMT:single_character'='CHAR(1)')) by
+55 ! hadoop;
+56   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.13 seconds
+      cpu time            0.01 seconds
+
+
+57   /******************************/
+58   /* Did the ALTER TABLE fix it */
+59   /******************************/
+60   data work.letters_fixed;
+61      set mycdh.letters;
+62   run;
+
+NOTE: There were 180 observations read from the data set MYCDH.LETTERS.
+NOTE: The data set WORK.LETTERS_FIXED has 180 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.40 seconds
+      cpu time            0.03 seconds
+
+
+63
+64   proc datasets library=work;
+65   quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+
+
+66   /*****************************************/
+67   /* Now for something completly different */
+68   /*****************************************/
+69
+70   data mycdh.letters_implicit (drop=i);
+71      do i = 1 to 180;
+72         single_character='a'; output;
+73      end;
+74   run;
+
+NOTE: The data set MYCDH.LETTERS_IMPLICIT has 180 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.59 seconds
+      cpu time            0.06 seconds
+
+
+75
+76   /********************************************************************/
+77   /* copy the new table from Hive into Hadoop and check the file size */
+78   /*                                                                  */
+79   /* How large is the resulting work.letters_implicit                 */
+80   /* SAS data set? Guess then run the following code.                 */
+81   /********************************************************************/
+82   data work.letters_implicit;
+83      set mycdh.letters_implicit;
+84   run;
+
+NOTE: There were 180 observations read from the data set MYCDH.LETTERS_IMPLICIT.
+NOTE: The data set WORK.LETTERS_IMPLICIT has 180 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.77 seconds
+      cpu time            0.12 seconds
+
+
+85   proc datasets library=work;
+86   quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+
+
+87   /********************/
+88   /* Why did it work? */
+89   /********************/
+90   proc sql;
+91      connect to hadoop (server='quickstart.cloudera' user=cloudera password=XXXXXXXX);
+
+92      select * from connection to hadoop
+93         (describe formatted letters_implicit);
+WARNING: The following columns could have a length in SAS of 32767. If so, SAS performance is
+         impacted. See SAS/ACCESS documentation for details.  The columns read from Hive followed
+         by the maximum length observed were:  col_name:28, data_type:68, comment:20
+94      disconnect from hadoop;
+95   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.15 seconds
+      cpu time            0.06 seconds
+
+
+96
+97   /************************************************************/
+98   /* Do you see it?                                           */
+99   /* Checkout the data type for the single_character column.  */
+100  /* It's funny that the above code generates the 32k message */
+101  /************************************************************/
+102
+103  /************/
+104  /* Clean up */
+105  /************/
+106  proc sql;
+107     drop table work.letters;
+NOTE: Table WORK.LETTERS has been dropped.
+108     drop table work.letters_fixed;
+NOTE: Table WORK.LETTERS_FIXED has been dropped.
+109     drop table work.letters_implicit;
+NOTE: Table WORK.LETTERS_IMPLICIT has been dropped.
+110     drop table mycdh.letters;
+NOTE: Table MYCDH.LETTERS has been dropped.
+111     drop table mycdh.letters_implicit;
+NOTE: Table MYCDH.LETTERS_IMPLICIT has been dropped.
+112  quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.47 seconds
+      cpu time            0.01 seconds
+
+
+113
+114  /*******************/
+115  /* End Exercise 05 */
+116  /*******************/
+

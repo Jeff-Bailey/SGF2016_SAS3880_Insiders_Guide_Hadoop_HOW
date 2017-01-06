@@ -1,0 +1,15 @@
+SAS3880 - An Insider’s Guide to SAS/ACCESS to Hadoop
+
+Jeff Bailey
+Jeff.Bailey@sas.com
+
+In the very near future Hadoop will likely find its way into your SAS environment. It is rapidly displacing database management systems in the corporate world and rearing its head in the SAS world. If you think now is the time to learn how to use SAS with Hadoop, you are in luck. This workshop is the jump start you need.
+ 
+This workshop show you how to access Hadoop using SAS. We devote most of our time to exploring SAS/ACCESS to Hadoop. During the workshop you will learn:
+ 
+•	How to configure your SAS environment so that you can access Hadoop
+•	How to use the Hadoop FILENAME statement 
+•	How to use Hadoop Procedure
+•	How to use SAS/ACCESS to Hadoop. 
+
+A basic understanding of Hadoop is a prerequisite for attending this workshop.

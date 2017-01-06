@@ -1,0 +1,322 @@
+1    /***************************************************************/
+2    /* Exercise 04 - SAS3880                                       */
+3    /* An Insider's Guide to SAS/ACCESS to Hadoop                  */
+4    /*                                                             */
+5    /* Explore BULKLOAD=                                           */
+6    /***************************************************************/
+7
+8    /****************************************************************/
+9    /* First:  bulkload=yes the sashelp.cars SAS data set into CDH  */
+10   /* Second: bulkload=no sashelp.cars and compare to first.       */
+11   /* Third:  bulkload=yes sashelp.cars underlying parquet file.   */
+12   /****************************************************************/
+13
+14   libname mycdh hadoop server="quickstart.cloudera" user=cloudera password=XXXXXXXX;
+
+NOTE: Libref MYCDH was successfully assigned as follows:
+      Engine:        HADOOP
+      Physical Name: jdbc:hive2://quickstart.cloudera:10000/default
+15   options sastrace=',,,d' sastraceloc=saslog nostsuffix;
+16
+17   /* First we bulk load then we run a non-load append */
+18
+19   /**************************************************************************/
+20   /* The following warning occurs because the cars data set has in index    */
+21   /* defined on it. You can ignore it.                                      */
+22   /*                                                                        */
+23   /* WARNING: Engine HADOOP does not support SORTEDBY operations.  SORTEDBY */
+24   /*          information cannot be copied.                                 */
+25   /**************************************************************************/
+26
+27   proc append base=mycdh.cars (bulkload=yes)
+NOTE: Writing HTML Body file: sashtml.htm
+28               data=sashelp.cars;
+
+HADOOP_1: Executed: on connection 1
+USE `default`
+
+
+HADOOP_2: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_3: Executed: on connection 2
+USE `default`
+
+
+HADOOP_4: Prepared: on connection 2
+SHOW TABLES 'CARS'
+
+
+HADOOP_5: Prepared: on connection 2
+DESCRIBE FORMATTED CARS
+
+
+HADOOP_6: Prepared: on connection 2
+SELECT * FROM `CARS`
+
+29   run;
+
+NOTE: Appending SASHELP.CARS to MYCDH.CARS.
+NOTE: There were 428 observations read from the data set SASHELP.CARS.
+NOTE: 428 observations added.
+NOTE: The data set MYCDH.CARS has . observations and 15 variables.
+
+HADOOP_7: Executed: on connection 2
+CREATE TABLE sastmp_02_24_13_30_38_176_00002(  make varchar(13), model varchar(40), type
+varchar(8), origin varchar(6), drivetrain varchar(5), msrp double, invoice double, enginesize
+double, cylinders double, horsepower double, mpg_city double, mpg_highway double, weight double,
+wheelbase double, length double )  ROW FORMAT DELIMITED FIELDS TERMINATED BY '\001' LINES
+TERMINATED BY '\012' STORED AS TEXTFILE
+
+
+HADOOP_8: Executed: on connection 2
+LOAD DATA INPATH '/tmp/sasdata-2016-02-24-13-30-38-125-e-00001.dlv' INTO TABLE
+sastmp_02_24_13_30_38_176_00002
+
+
+HADOOP_9: Executed: on connection 2
+set hive.exec.dynamic.partition.mode=nonstrict
+
+
+HADOOP_10: Executed: on connection 2
+set hive.exec.dynamic.partition=true
+
+
+HADOOP_11: Executed: on connection 2
+set mapred.max.split.size=536870912
+
+
+HADOOP_12: Executed: on connection 2
+INSERT INTO TABLE `cars` SELECT * FROM sastmp_02_24_13_30_38_176_00002
+
+
+HADOOP_13: Executed: on connection 2
+DROP TABLE sastmp_02_24_13_30_38_176_00002
+
+NOTE: PROCEDURE APPEND used (Total process time):
+      real time           14.07 seconds
+      cpu time            0.15 seconds
+
+
+30
+31   /****************************/
+32   /* clean up so we can rerun */
+33   /****************************/
+34   proc sql;
+35      drop table mycdh.cars;
+
+HADOOP_14: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_15: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_16: Executed: on connection 1
+DROP TABLE IF EXISTS `CARS`
+
+
+HADOOP_17: Executed: on connection 1
+DROP VIEW IF EXISTS `CARS`
+
+NOTE: Table MYCDH.CARS has been dropped.
+36   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.23 seconds
+      cpu time            0.01 seconds
+
+
+37
+38   /*************************************************************/
+39   /* How does bulkloading differ from non-bulkload loading?    */
+40   /*************************************************************/
+41
+
+HADOOP_18: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_19: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+42   proc append base=mycdh.cars
+43               data=sashelp.cars;
+
+HADOOP_20: Executed: on connection 2
+USE `default`
+
+
+HADOOP_21: Prepared: on connection 2
+SHOW TABLES 'CARS'
+
+44   run;
+
+NOTE: Appending SASHELP.CARS to MYCDH.CARS.
+NOTE: BASE data set does not exist. DATA file is being copied to BASE file.
+NOTE: SAS variable labels, formats, and lengths are not written to DBMS tables.
+WARNING: Engine HADOOP does not support SORTEDBY operations.  SORTEDBY information cannot be
+         copied.
+
+HADOOP_22: Executed: on connection 2
+CREATE TABLE `CARS` (`Make` VARCHAR(13),`Model` VARCHAR(40),`Type` VARCHAR(8),`Origin`
+VARCHAR(6),`DriveTrain` VARCHAR(5),`MSRP` DOUBLE,`Invoice` DOUBLE,`EngineSize` DOUBLE,`Cylinders`
+DOUBLE,`Horsepower` DOUBLE,`MPG_City` DOUBLE,`MPG_Highway` DOUBLE,`Weight` DOUBLE,`Wheelbase`
+DOUBLE,`Length` DOUBLE) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\001' LINES TERMINATED BY
+'\012' STORED AS TEXTFILE TBLPROPERTIES ('SAS OS Name'='X64_7PRO','SAS
+Version'='9.04.01M3P06242015')
+
+NOTE: There were 428 observations read from the data set SASHELP.CARS.
+NOTE: The data set MYCDH.CARS has 428 observations and 15 variables.
+
+HADOOP_23: Executed: on connection 2
+LOAD DATA INPATH '/tmp/sasdata-2016-02-24-13-30-52-045-e-00003.dlv' OVERWRITE INTO TABLE `CARS`
+
+NOTE: PROCEDURE APPEND used (Total process time):
+      real time           0.59 seconds
+      cpu time            0.04 seconds
+
+
+45
+46   /****************************/
+47   /* clean up so we can rerun */
+48   /****************************/
+49   proc sql;
+50      drop table mycdh.cars;
+
+HADOOP_24: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_25: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_26: Executed: on connection 1
+DROP TABLE IF EXISTS `CARS`
+
+
+HADOOP_27: Executed: on connection 1
+DROP VIEW IF EXISTS `CARS`
+
+NOTE: Table MYCDH.CARS has been dropped.
+51   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.28 seconds
+      cpu time            0.06 seconds
+
+
+52
+53   /*********************************************/
+54   /* Is loading into a parquet file different? */
+55   /*********************************************/
+56
+
+HADOOP_28: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_29: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+57   proc append base=mycdh.cars (dbcreate_table_opts='stored as parquetfile')
+58               data=sashelp.cars;
+
+HADOOP_30: Executed: on connection 2
+USE `default`
+
+
+HADOOP_31: Prepared: on connection 2
+SHOW TABLES 'CARS'
+
+59   run;
+
+NOTE: Appending SASHELP.CARS to MYCDH.CARS.
+NOTE: BASE data set does not exist. DATA file is being copied to BASE file.
+NOTE: SAS variable labels, formats, and lengths are not written to DBMS tables.
+WARNING: Engine HADOOP does not support SORTEDBY operations.  SORTEDBY information cannot be
+         copied.
+
+HADOOP_32: Executed: on connection 2
+CREATE TABLE `CARS` (`Make` VARCHAR(13),`Model` VARCHAR(40),`Type` VARCHAR(8),`Origin`
+VARCHAR(6),`DriveTrain` VARCHAR(5),`MSRP` DOUBLE,`Invoice` DOUBLE,`EngineSize` DOUBLE,`Cylinders`
+DOUBLE,`Horsepower` DOUBLE,`MPG_City` DOUBLE,`MPG_Highway` DOUBLE,`Weight` DOUBLE,`Wheelbase`
+DOUBLE,`Length` DOUBLE) stored as parquetfile  TBLPROPERTIES ('SAS OS Name'='X64_7PRO','SAS
+Version'='9.04.01M3P06242015')
+
+NOTE: There were 428 observations read from the data set SASHELP.CARS.
+NOTE: The data set MYCDH.CARS has 428 observations and 15 variables.
+
+HADOOP_33: Executed: on connection 2
+CREATE TABLE sastmp_02_24_13_30_52_965_00005( `Make` VARCHAR(13),`Model` VARCHAR(40),`Type`
+VARCHAR(8),`Origin` VARCHAR(6),`DriveTrain` VARCHAR(5),`MSRP` DOUBLE,`Invoice`
+DOUBLE,`EngineSize` DOUBLE,`Cylinders` DOUBLE,`Horsepower` DOUBLE,`MPG_City` DOUBLE,`MPG_Highway`
+DOUBLE,`Weight` DOUBLE,`Wheelbase` DOUBLE,`Length` DOUBLE )  ROW FORMAT DELIMITED FIELDS
+TERMINATED BY '\001' LINES TERMINATED BY '\012' STORED AS TEXTFILE
+
+
+HADOOP_34: Executed: on connection 2
+LOAD DATA INPATH '/tmp/sasdata-2016-02-24-13-30-52-926-e-00004.dlv' OVERWRITE INTO TABLE
+sastmp_02_24_13_30_52_965_00005
+
+
+HADOOP_35: Executed: on connection 2
+set hive.exec.dynamic.partition.mode=nonstrict
+
+
+HADOOP_36: Executed: on connection 2
+set hive.exec.dynamic.partition=true
+
+
+HADOOP_37: Executed: on connection 2
+set mapred.max.split.size=536870912
+
+
+HADOOP_38: Executed: on connection 2
+INSERT INTO TABLE `cars` SELECT * FROM sastmp_02_24_13_30_52_965_00005
+
+
+HADOOP_39: Executed: on connection 2
+DROP TABLE sastmp_02_24_13_30_52_965_00005
+
+NOTE: PROCEDURE APPEND used (Total process time):
+      real time           13.38 seconds
+      cpu time            0.07 seconds
+
+
+60
+61   /************/
+62   /* Clean up */
+63   /************/
+64   proc sql;
+65      drop table mycdh.cars;
+
+HADOOP_40: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_41: Prepared: on connection 1
+SHOW TABLES 'CARS'
+
+
+HADOOP_42: Executed: on connection 1
+DROP TABLE IF EXISTS `CARS`
+
+
+HADOOP_43: Executed: on connection 1
+DROP VIEW IF EXISTS `CARS`
+
+NOTE: Table MYCDH.CARS has been dropped.
+66   quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.23 seconds
+      cpu time            0.00 seconds
+
+
+67
+68
+69   /*******************/
+70   /* End Exercise 04 */
+71   /*******************/
+

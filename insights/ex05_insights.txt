@@ -1,0 +1,11 @@
+32K String Thing- Insights
+--------------------------
+You should not use the Hive STRING data type with SAS. Every time you read a STRING column into SAS it results in a 32,767 character column. We saw how it wastes diskspace.
+
+This problem manifests itself when the tables are created outside of SAS. When SAS creates the table you will not experience the 32K String Thing.
+
+We didn't cover it, but you can use DBMAX_TEXT= to help with this. It limits the size of STRING columns (when they are returned to SAS) that are created in SAS. It is not a great solution because it still wastes diskspace. It is better than nothing.
+
+It is far better to use the VARCHAR type in Hive tables.
+
+SAS uses Hive extended table attributes to mitigate this. You saw an example of this.
