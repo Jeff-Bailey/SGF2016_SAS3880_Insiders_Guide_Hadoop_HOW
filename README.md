@@ -2,9 +2,9 @@
 
 This repository contains the materials that were used for the 2015 and 2016 SAS and Hadoop workshops that I delivered at SAS Global Forum. I first presented this workshop as a Cloudera employee (the backstory is interesting, feel free to ask me about it). This project includes both the exercise code and SAS logs that show what happens. Including the SAS logs will help you even if you do not have an environment in which to run this.
 
-###This workshop is somewhat dated, but the information is still valid. It is worth looking at.
+<strong>This workshop is somewhat dated, but the information is still valid. It is worth looking at.</strong>
 
-##Abstract - SAS3880 - An Insider’s Guide to SAS/ACCESS to Hadoop
+Abstract - SAS3880 - An Insider’s Guide to SAS/ACCESS to Hadoop
 
 In the very near future Hadoop will likely find its way into your SAS environment. It is rapidly displacing database management systems in the corporate world and rearing its head in the SAS world. If you think now is the time to learn how to use SAS with Hadoop, you are in luck. This workshop is the jump start you need.
  
@@ -18,7 +18,7 @@ This workshop show you how to access Hadoop using SAS. We devote most of our tim
 
 A basic understanding of Hadoop is a prerequisite for attending this workshop.
  
-##Repository Contents
+Repository Contents
 -------------
 <pre><code>..\SGF2016_3008-2016_Hadoop_Workshop\
   3880-2016 - Hadoop Workshop Slides.pdf
